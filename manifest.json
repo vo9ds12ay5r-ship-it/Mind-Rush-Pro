@@ -1,11 +1,13 @@
 {
   "name": "Mind Rush Pro",
   "short_name": "MindRush",
-  "description": "A fun reflex, memory, and math game for all ages!",
-  "start_url": "./index.html",
+  "description": "A fun and challenging brain twist game.",
+  "start_url": "/",
   "display": "standalone",
-  "background_color": "#0b0b0b",
-  "theme_color": "#00ffff",
+  "background_color": "#ffffff",
+  "theme_color": "#4CAF50",
+  "orientation": "any",
+  "scope": "/",
   "icons": [
     {
       "src": "icon-192.png",
