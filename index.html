@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mind Rush PRO</title>
+
+<style>
+body{
+margin:0;
+font-family:Arial;
+background:#0b0b0b;
+color:white;
+text-align:center;
+}
+h1{color:#00ffff;text-shadow:0 0 10px cyan;}
+button{
+padding:12px 22px;
+margin:8px;
+font-size:16px;
+border:none;
+border-radius:20px;
+background:#00ffff;
+box-shadow:0 0 10px cyan;
+cursor:pointer;
+}
+.dark{background:#000;color:white;}
+.light{background:#f4f4f4;color:black;}
+.box{
+height:110px;
+border-radius:15px;
+display:flex;
+align-items:center;
+justify-content:center;
+font-size:22px;
+box-shadow:0 0 10px;
+cursor:pointer;
+user-select:none;
+}
+.grid{
+display:grid;
+grid-template-columns:repeat(2,1fr);
+gap:12px;
+padding:15px;
+}
+.info{font-size:15px;margin:8px;}
+footer{color:gray;margin:10px;font-size:14px;}
+#loader{
+position:fixed;
+top:0;left:0;
+width:100%;height:100%;
+background:black;
+display:flex;
+align-items:center;
+justify-content:center;
+z-index:1000;
+}
+</style>
+</head>
+
+<body class="dark">
+
+<!-- LOADER -->
+<div id="loader">
+<h2 style="color:cyan;">Loading Mind Rush PRO...</h2>
+</div>
+
+<h1>🧠 Mind Rush PRO</h1>
+
+<div id="menu">
+<button onclick="start('color')">🎨 Color Rush (FREE)</button><br>
+<button onclick="unlock('memory',50)">🧠 Memory (50🪙)</button>
+<button onclick="unlock('math',100)">➕ Math (100🪙)</button>
+<button onclick="unlock('reflex',150)">⚡ Reflex (150🪙)</button><br>
+<button onclick="toggleTheme()">🌗 Theme</button>
+<button onclick="toggleSound()">🔊 Sound</button>
+</div>
+
+<div id="game" style="display:none;">
+<div class="info">
+Score: <span id="score">0</span> |
+High: <span id="high">0</span> |
+❤️ <span id="lives">3</span> |
+🪙 <span id="coins">0</span>
+</div>
+<h2 id="task"></h2>
+<div id="board" class="grid"></div>
+</div>
+
+<audio id="bgm" loop>
+<source src="https://cdn.pixabay.com/download/audio/2023/03/24/audio_7e61a4f3e9.mp3">
+</audio>
+
+<script>
+// ===== CORE DATA =====
+let score=0,lives=3,mode="",target="";
+let colors=["red","blue","green","yellow"];
+let sound=true;
+
+// ===== STORAGE =====
+let coins = Number(localStorage.getItem("coins")) || 0;
+let high = Number(localStorage.getItem("high")) || 0;
+let unlocked = JSON.parse(localStorage.getItem("unlocked")) || {
+color:true,memory:false,math:false,reflex:false
+};
+
+// ===== DAILY BONUS =====
+let today=new Date().toDateString();
+if(localStorage.getItem("lastBonus")!==today){
+coins+=20;
+localStorage.setItem("coins",coins);
+localStorage.setItem("lastBonus",today);
+}
+
+// ===== ELEMENTS =====
+const scoreEl=score=document.getElementById("score");
+const livesEl=document.getElementById("lives");
+const coinsEl=document.getElementById("coins");
+const highEl=document.getElementById("high");
+const board=document.getElementById("board");
+const task=document.getElementById("task");
+
+// ===== INIT =====
+coinsEl.innerText=coins;
+highEl.innerText=high;
+
+window.onload=()=>{
+setTimeout(()=>document.getElementById("loader").style.display="none",1000);
+}
+
+// ===== UI =====
+function updateUI(){
+scoreEl.innerText=score;
+livesEl.innerText=lives;
+coinsEl.innerText=coins;
+highEl.innerText=high;
+}
+
+function toggleTheme(){
+document.body.className=document.body.className=="dark"?"light":"dark";
+}
+
+function toggleSound(){
+sound=!sound;
+let bgm=document.getElementById("bgm");
+sound?bgm.play():bgm.pause();
+alert("Sound "+(sound?"ON":"OFF"));
+}
+
+// ===== GAME FLOW =====
+function unlock(m,cost){
+if(unlocked[m]){start(m);return;}
+if(coins>=cost){
+coins-=cost;
+unlocked[m]=true;
+localStorage.setItem("coins",coins);
+localStorage.setItem("unlocked",JSON.stringify(unlocked));
+alert(m.toUpperCase()+" UNLOCKED!");
+start(m);
+}else{
+alert("Not enough coins!");
+}
+}
+
+function start(m){
+mode=m;score=0;lives=3;
+document.getElementById("menu").style.display="none";
+document.getElementById("game").style.display="block";
+updateUI();
+next();
+}
+
+function next(){
+board.innerHTML="";
+
+// COLOR RUSH
+if(mode=="color"){
+target=colors[Math.floor(Math.random()*4)];
+task.innerText="Tap "+target.toUpperCase();
+colors.sort(()=>Math.random()-0.5).forEach(c=>{
+let d=document.createElement("div");
+d.className="box";
+d.style.background=c;
+d.onclick=()=>check(c);
+board.appendChild(d);
+});
+}
+
+// MEMORY
+if(mode=="memory"){
+target=colors[Math.floor(Math.random()*4)];
+task.innerText="Remember!";
+colors.forEach(c=>{
+let d=document.createElement("div");
+d.className="box";
+d.style.background=c;
+board.appendChild(d);
+});
+setTimeout(()=>{
+board.innerHTML="";
+task.innerText="Tap "+target.toUpperCase();
+colors.forEach(c=>{
+let d=document.createElement("div");
+d.className="box";
+d.style.background=c;
+d.onclick=()=>check(c);
+board.appendChild(d);
+});
+},900);
+}
+
+// MATH
+if(mode=="math"){
+let a=Math.floor(Math.random()*10);
+let b=Math.floor(Math.random()*10);
+target=a+b;
+task.innerText=`${a} + ${b} = ?`;
+[a+b,a+b+1,a+b-1,a+b+2].sort(()=>Math.random()-0.5)
+.forEach(n=>{
+let d=document.createElement("div");
+d.className="box";
+d.style.background="purple";
+d.innerText=n;
+d.onclick=()=>check(n);
+board.appendChild(d);
+});
+}
+
+// REFLEX
+if(mode=="reflex"){
+task.innerText="WAIT...";
+setTimeout(()=>{
+task.innerText="TAP!";
+target="tap";
+},Math.random()*2000+1000);
+let d=document.createElement("div");
+d.className="box";
+d.style.background="orange";
+d.innerText="TAP";
+d.onclick=()=>check("tap");
+board.appendChild(d);
+}
+}
+
+function check(v){
+if(v==target){
+score+=10;
+coins+=2;
+if(score>high){
+high=score;
+localStorage.setItem("high",high);
+}
+localStorage.setItem("coins",coins);
+updateUI();
+next();
+}else{
+lives--;
+updateUI();
+if(lives<=0){
+alert("Game Over!\nScore: "+score);
+location.reload();
+}
+}
+}
+</script>
+
+<footer>
+Made by <b>SATYAM Studios</b> 🚀
+</footer>
+
+</body>
+  </html>
